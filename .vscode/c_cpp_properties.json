@@ -1,14 +1,10 @@
 {
+    // Lets the C/C++ extension get compiler and include settings from CMake Tools,
+    // avoiding machine- and operating-system-specific paths in this workspace.
     "configurations": [
         {
-            "name": "Win32",
-            "includePath": [
-                "${workspaceFolder}\\include"
-            ],
-            "compilerPath": "C:\\msys64\\ucrt64\\bin\\g++.exe",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "windows-gcc-x64"
+            "name": "CMake",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4
