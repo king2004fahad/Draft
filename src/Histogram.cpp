@@ -11,17 +11,17 @@ Histogram::Histogram(const std::vector<double>& data, std::size_t numBins)
 {
     if (data.empty())
     {
-        throw std::invalid_argument("Histogram: data is empty");
+        throw std::invalid_argument("Histogram: data cannot be empty");
     }
     if (numBins == 0)
     {
-        throw std::invalid_argument("Histogram: numBins must be > 0");
+        throw std::invalid_argument("Histogram: Number of bins must be greater than zero");
     }
     for (double x : data)
     {
         if (!std::isfinite(x))
         {
-            throw std::invalid_argument("Histogram: data contains NaN or infinity");
+            throw std::invalid_argument("Histogram: data cannot contain NaN or infinity");
         }
     }
 
