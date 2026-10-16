@@ -88,6 +88,7 @@ int main(int argc, char** argv)
         const std::vector<double> ht = DataProcessor::toNumbers(loader.getColumn("height"));
         Plot scatter;
         scatter.kind = PlotKind::Scatter;
+        scatter.showBestFit = true;
         for (std::size_t i = 0; i < sc.size(); ++i)
         {
             if (std::isfinite(sc[i]) && std::isfinite(ht[i]))

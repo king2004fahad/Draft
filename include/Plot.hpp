@@ -30,6 +30,8 @@ struct Plot {
     PlotKind kind = PlotKind::Line;
     std::vector<Point> points;
     std::vector<Bar> bars;
+    // Draw an ordinary least-squares line for scatter plots when enabled.
+    bool showBestFit = false;
 };
 
 }  // namespace dataviz

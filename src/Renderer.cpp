@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -24,6 +25,7 @@ const char* const FONT = "font-family=\"sans-serif\"";
 const char* const DATA_COLOR = "#4682b4";
 const char* const GRID_COLOR = "#e0e0e0";
 const char* const NOTE_COLOR = "#c0392b";
+const char* const BEST_FIT_COLOR = "#c0392b";
 
 // Replaces characters that have a special meaning in XML.
 std::string escapeXml(const std::string& text)
@@ -66,6 +68,53 @@ void requireFinite(double value, const char* what)
     {
         throw std::invalid_argument(std::string("Renderer: ") + what + " is NaN or infinite");
     }
+}
+
+bool bestFitLine(const std::vector<Point>& points, double xMin, double xMax,
+                 Point& start, Point& end)
+{
+    if (points.size() < 2 || xMin == xMax)
+    {
+        return false;
+    }
+
+    long double meanX = 0.0L;
+    long double meanY = 0.0L;
+    for (const Point& point : points)
+    {
+        meanX += point.x;
+        meanY += point.y;
+    }
+    meanX /= points.size();
+    meanY /= points.size();
+
+    long double covariance = 0.0L;
+    long double varianceX = 0.0L;
+    for (const Point& point : points)
+    {
+        const long double dx = point.x - meanX;
+        covariance += dx * (point.y - meanY);
+        varianceX += dx * dx;
+    }
+    if (varianceX == 0.0L)
+    {
+        return false;
+    }
+
+    const long double slope = covariance / varianceX;
+    const long double intercept = meanY - slope * meanX;
+    const long double startY = slope * xMin + intercept;
+    const long double endY = slope * xMax + intercept;
+    if (!std::isfinite(slope) || !std::isfinite(startY) || !std::isfinite(endY) ||
+        std::fabs(startY) > std::numeric_limits<double>::max() ||
+        std::fabs(endY) > std::numeric_limits<double>::max())
+    {
+        throw std::invalid_argument("Renderer: best-fit line cannot be computed for this data");
+    }
+
+    start = {xMin, static_cast<double>(startY)};
+    end = {xMax, static_cast<double>(endY)};
+    return true;
 }
 
 }  // namespace
@@ -117,6 +166,17 @@ std::string Renderer::render(const Plot& plot, const Annotations& annotations) c
             yMin = std::min(yMin, p.y);
             yMax = std::max(yMax, p.y);
         }
+    }
+
+    Point fitStart{};
+    Point fitEnd{};
+    const bool hasBestFit =
+        plot.kind == PlotKind::Scatter && plot.showBestFit &&
+        bestFitLine(plot.points, xMin, xMax, fitStart, fitEnd);
+    if (hasBestFit)
+    {
+        yMin = std::min(yMin, std::min(fitStart.y, fitEnd.y));
+        yMax = std::max(yMax, std::max(fitStart.y, fitEnd.y));
     }
 
     // ---- 2. axes: data range -> pixel range -----------------------------
@@ -212,8 +272,16 @@ std::string Renderer::render(const Plot& plot, const Annotations& annotations) c
             }
             svg << "\"/>\n";
         }
-        else  // scatter: markers only
+        else
         {
+            if (hasBestFit)
+            {
+                svg << "  <line x1=\"" << num(xAxis.scale(fitStart.x)) << "\" y1=\""
+                    << num(yAxis.scale(fitStart.y)) << "\" x2=\""
+                    << num(xAxis.scale(fitEnd.x)) << "\" y2=\""
+                    << num(yAxis.scale(fitEnd.y)) << "\" stroke=\"" << BEST_FIT_COLOR
+                    << "\" stroke-width=\"2\" stroke-dasharray=\"6,4\"/>\n";
+            }
             for (const Point& p : plot.points)
             {
                 svg << "  <circle cx=\"" << num(xAxis.scale(p.x)) << "\" cy=\""

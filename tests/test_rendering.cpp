@@ -86,6 +86,19 @@ static void testRenderer()
     svg = renderer.render(scatter, ann);
     CHECK(!contains(svg, "<polyline"));
     CHECK(contains(svg, "fill-opacity"));
+    CHECK(!contains(svg, "stroke-dasharray"));
+
+    scatter.showBestFit = true;
+    svg = renderer.render(scatter, ann);
+    CHECK(contains(svg, "stroke-dasharray=\"6,4\""));
+    CHECK(contains(svg, "stroke=\"#c0392b\""));
+
+    Plot verticalScatter;
+    verticalScatter.kind = PlotKind::Scatter;
+    verticalScatter.showBestFit = true;
+    verticalScatter.points = {{2, 1}, {2, 3}};
+    svg = renderer.render(verticalScatter, ann);
+    CHECK(!contains(svg, "stroke-dasharray"));
 
     CountPlot counts;
     counts.count({"a", "b", "a"});
